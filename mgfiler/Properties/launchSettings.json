@@ -2,7 +2,7 @@
   "profiles": {
     "mgfiler": {
       "commandName": "Project",
-      "commandLineArgs": "pack --elf D:\\work\\silenthill2_mgf\\sh2_SLUS-20228_2.01\\SLUS_202.28 --mgf PIC.MGF --dir D:\\work\\silenthill2_mgf\\PIC_mod --out-elf \"D:\\work\\silenthill2_mgf\\sh2_SLUS-20228_2.01 - Copy\\SLUS_202.28\" --out-mgf \"D:\\work\\silenthill2_mgf\\sh2_SLUS-20228_2.01 - Copy\\DATA\\PIC.MGF\""
+      "commandLineArgs": "pack --elf D:\\work\\silenthill2_mgf\\sh2_SLUS-20228_2.01\\SLUS_202.28 --mgf CHR.MGF --dir D:\\work\\silenthill2_mgf\\CHR_mod --out-elf \"D:\\work\\silenthill2_mgf\\sh2_SLUS-20228_2.01 - Copy\\SLUS_202.28\" --out-mgf \"D:\\work\\silenthill2_mgf\\sh2_SLUS-20228_2.01 - Copy\\DATA\\CHR.MGF\""
     }
   }
 }

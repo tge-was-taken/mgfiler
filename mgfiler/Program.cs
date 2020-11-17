@@ -247,22 +247,9 @@ namespace mgfiler
                 newFileTable.Add( new DirPackTerminatorNode() { Parent = dirInfo, OriginalDataOffset = newFileTable.Max( x => x.OriginalDataOffset ) + 1 } );
         }
 
-        static int PackMgf( PackOptions options )
+        class FsPackNodeComparer : IComparer<IFsPackNode>
         {
-            // Load file table
-            Console.WriteLine( "Loading file table" );
-            var elfBuffer = File.ReadAllBytes( options.ElfPath );
-            var fileTable = new FileTable();
-            fileTable.Read( elfBuffer );
-
-            // Add extension in case it is missing
-            options.MgfName = Path.ChangeExtension( options.MgfName, "mgf" );
-
-            // Gather file replacements
-            var newFileTable = new List<IFsPackNode>();
-            CollectPackInfoFromDirectory( newFileTable, fileTable, options.DirectoryPath, options.DirectoryPath, null );
-
-            newFileTable.Sort( ( a, b ) =>
+            public int Compare( IFsPackNode a, IFsPackNode b )
             {
                 if ( a is DirPackTerminatorNode && b.Parent == a.Parent )
                     return 1;
@@ -280,10 +267,42 @@ namespace mgfiler
                 }
 
                 return aOff.CompareTo( bOff );
-            } );
+            }
+        }
+
+        static FileStream CreateFile( string path )
+        {
+            Directory.CreateDirectory( Path.GetDirectoryName( path ) );
+            return File.Create( path );
+        }
+
+        static int PackMgf( PackOptions options )
+        {
+            // Load file table
+            Console.WriteLine( "Loading file table" );
+            var elfBuffer = File.ReadAllBytes( options.ElfPath );
+            var fileTable = new FileTable();
+            fileTable.Read( elfBuffer );
+
+            // Add extension in case it is missing
+            options.MgfName = Path.ChangeExtension( options.MgfName, "mgf" );
+
+            // Gather file replacements
+            var newFileTable = new List<IFsPackNode>();
+            CollectPackInfoFromDirectory( newFileTable, fileTable, options.DirectoryPath, options.DirectoryPath, null );
+
+            // Sort files per directory
+            for ( int i = 0; i < newFileTable.Count; i++ )
+            {
+                if ( newFileTable[i] is DirPackNode dir && dir.Node != null )
+                {
+                    var endIndex = newFileTable.FindIndex( x => x is DirPackTerminatorNode && x.Parent == dir );
+                    newFileTable.Sort( i, endIndex - i, new FsPackNodeComparer() );
+                }
+            }
 
             Console.WriteLine( $"Packing directory {options.DirectoryPath} into {options.OutMgfPath}" );
-            using var mgfStream = File.Create( options.OutMgfPath );
+            using var mgfStream = CreateFile( options.OutMgfPath );
             var dirStack = new Stack<DirPackNode>();
 
             //// HACK fix unlisted files coming before their directory
@@ -317,7 +336,6 @@ namespace mgfiler
                     var newRelativeDataOffset = (int)mgfAlignedPos - dirStartOffset;
 
 #if DEBUG_ENSURE_MATCHING_OUTPUT
-                    //TODO investigate this
                     Debug.Assert( dir.Node.RelativeDataOffset == newRelativeDataOffset );
 #endif
 
